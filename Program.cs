@@ -36,7 +36,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors("AllowReactApp");
-
+app.UseStaticFiles();
 app.MapControllers();
 
 app.Run();

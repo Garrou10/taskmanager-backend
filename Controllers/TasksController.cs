@@ -47,4 +47,32 @@ public class TasksController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpPost("{id}/upload")]
+    public async Task<IActionResult> UploadImage(int id, IFormFile file)
+    {
+        var taskItem = await _context.Tasks.FindAsync(id);
+        if (taskItem == null) return NotFound("Uppgiften hittades inte.");
+        if (file == null || file.Length == 0) return BadRequest("Ingen fil valdes.");
+
+        // Skapar en "wwwroot/uploads" mapp om den inte redan finns
+        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+        if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+        // Ger filen ett unikt namn och sparar den
+        var uniqueFileName = Guid.NewGuid().ToString() + "_" + file.FileName;
+        var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        // Uppdaterar uppgiftens ImageUrl i databasen
+        taskItem.ImageUrl = $"/uploads/{uniqueFileName}";
+        await _context.SaveChangesAsync();
+
+        return Ok(taskItem);
+    }
 }
+
